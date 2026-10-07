@@ -102,7 +102,7 @@ test('previous 182 files are used as history for recurrence', async ({ page }) =
   const entity = { nif: 'G12345674', name: 'Asociación', phone: '912345678', contactName: 'Pérez Lucía' };
   const row = (year: number, cents: number) => ({
     row: 2, source: 'h', nifRaw: '12345678Z', name: 'Núñez Peña José', amountCents: cents, amountRaw: '',
-    year, postcode: '28013', provinceText: '', keyRaw: '', inKind: false, representativeNifRaw: '',
+    year, dateText: '', postcode: '28013', provinceText: '', keyRaw: '', inKind: false, representativeNifRaw: '',
   });
   const f2024 = build182(buildDeclaration({ year: 2024, rows: [row(2024, 30000)], history: [] }), entity);
   const f2025 = build182(buildDeclaration({ year: 2025, rows: [row(2025, 40000)], history: [] }), entity);
@@ -135,4 +135,27 @@ test('unsupported files are rejected with a clear message', async ({ page }) => 
   await page.goto('/#/app');
   await page.getByTestId('file-input').setInputFiles(path.join(fixtures, 'notas.pdf'));
   await expect(page.getByRole('alert')).toContainText('Formato no soportado: .pdf');
+});
+
+test('re-uploading a corrected file replaces it instead of double counting', async ({ page }) => {
+  await page.goto('/#/app');
+  const file = path.join(fixtures, 'donativos_2026_excel.csv');
+  await page.getByTestId('file-input').setInputFiles(file);
+  const total = page.getByTestId('stats').locator('.stat').nth(1);
+  await expect(total).toContainText('1.645,50 €');
+  await page.getByTestId('file-input').setInputFiles(file);
+  await expect(page.getByRole('status').filter({ hasText: 'Se ha sustituido' })).toBeVisible();
+  await expect(page.getByTestId('filecard')).toHaveCount(1);
+  await expect(total).toContainText('1.645,50 €');
+});
+
+test('"Nombre Apellidos" columns are detected and reordered for AEAT', async ({ page }) => {
+  await page.goto('/#/app');
+  const csv = 'NIF;Nombre completo;Importe;CP\n12345678Z;José Luis Núñez Peña;30;28013\nX0000000T;Marta Gil Sanz;20;08012\nY0000000Z;Pedro Ruiz Mora;15;46002\n';
+  await page.getByTestId('file-input').setInputFiles({ name: 'socios.csv', mimeType: 'text/csv', buffer: Buffer.from(csv) });
+  const toggle = page.getByLabel(/reordenarlos a «Apellidos Nombre»/);
+  await expect(toggle).toBeChecked();
+  await expect(page.getByTestId('donor-table')).toContainText('Núñez Peña José Luis');
+  await toggle.uncheck();
+  await expect(page.getByTestId('donor-table')).toContainText('José Luis Núñez Peña');
 });

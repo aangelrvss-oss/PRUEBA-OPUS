@@ -16,6 +16,7 @@ function row(over: Partial<DonationRow>): DonationRow {
     amountCents: 1000,
     amountRaw: '10',
     year: 2025,
+    dateText: '',
     postcode: '08001',
     provinceText: '',
     keyRaw: '',

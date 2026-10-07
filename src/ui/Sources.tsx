@@ -1,7 +1,7 @@
 import { useId, useRef, useState } from 'react';
 import type { TableFile } from '../core/files';
 import { FIELD_LABELS, mappingProblems, type ColumnMapping, type FieldKey } from '../core/mapping';
-import { hasDateColumn, type Source, type SourceSummary } from '../core/workflow';
+import { hasDateColumn, nameOrderGuess, type Source, type SourceSummary } from '../core/workflow';
 import { IconTrash, IconUpload } from './icons';
 
 /* ------------------------------------------------------------------ */
@@ -124,7 +124,7 @@ export function SourceCard(props: {
         <IconTrash /> <span className="visually-hidden">Quitar</span>
       </button>
 
-      {(roleWarn || summary.warnings.length > 0 || problems.length > 0 || (isTable && !hasDateColumn(source))) && (
+      {(roleWarn || summary.warnings.length > 0 || problems.length > 0 || (isTable && !hasDateColumn(source)) || (isTable && nameOrderGuess(source.file, source.mapping) !== null)) && (
         <div className="extra">
           {roleWarn && <p className="badge badge-warn" style={{ whiteSpace: 'normal' }}>{roleWarn}</p>}
           {problems.map((p) => (
@@ -133,6 +133,7 @@ export function SourceCard(props: {
           {isTable && problems.length === 0 && !hasDateColumn(source) && (
             <FixedYear source={source} year={year} onChange={props.onChange} />
           )}
+          {isTable && problems.length === 0 && <NameOrder source={source} onChange={props.onChange} />}
           {summary.warnings.map((w) => (
             <p key={w} className="small subtle">{w}</p>
           ))}
@@ -140,8 +141,34 @@ export function SourceCard(props: {
       )}
       {showMapping && (
         <div className="extra">
-          <MappingEditor file={source.file as TableFile} mapping={source.mapping} onChange={(mapping) => props.onChange({ ...source, mapping })} />
+          <MappingEditor
+            file={source.file as TableFile}
+            mapping={source.mapping}
+            onChange={(mapping) => props.onChange({ ...source, mapping, givenFirst: nameOrderGuess(source.file, mapping)?.givenFirst ?? false })}
+          />
         </div>
+      )}
+    </div>
+  );
+}
+
+function NameOrder({ source, onChange }: { source: Source; onChange: (s: Source) => void }) {
+  const guess = nameOrderGuess(source.file, source.mapping);
+  const id = useId();
+  if (!guess || guess.checked === 0) return null;
+  return (
+    <div className="small" style={{ display: 'grid', gap: 4 }}>
+      <label htmlFor={id} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', cursor: 'pointer' }}>
+        <input id={id} type="checkbox" checked={source.givenFirst} onChange={(e) => onChange({ ...source, givenFirst: e.target.checked })} style={{ marginTop: 4 }} />
+        <span>
+          Los nombres están escritos como «Nombre Apellidos»: reordenarlos a «Apellidos Nombre», como pide la AEAT
+          {guess.example && source.givenFirst ? <span className="subtle"> (p. ej. «{guess.example.before}» → «{guess.example.after}»)</span> : null}.
+        </span>
+      </label>
+      {guess.givenFirst && (
+        <span className="subtle">
+          Detectado automáticamente: el {Math.round(guess.firstIsGiven * 100)} % de los nombres empieza por un nombre de pila frecuente.
+        </span>
       )}
     </div>
   );

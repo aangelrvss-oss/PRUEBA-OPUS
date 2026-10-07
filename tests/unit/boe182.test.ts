@@ -17,7 +17,7 @@ const pos = (rec: string, from: number, to: number) => rec.slice(from - 1, to);
 function row(over: Partial<DonationRow>): DonationRow {
   return {
     row: 2, source: 't', nifRaw: ANA, name: 'García López Ana', amountCents: 30050, amountRaw: '',
-    year: 2025, postcode: '08001', provinceText: '', keyRaw: '', inKind: false, representativeNifRaw: '',
+    year: 2025, dateText: '', postcode: '08001', provinceText: '', keyRaw: '', inKind: false, representativeNifRaw: '',
     ...over,
   };
 }

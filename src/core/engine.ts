@@ -1,4 +1,5 @@
 import type { ColumnMapping } from './mapping';
+import { givenFirstToSurnameFirst } from './names';
 import { validateNif, type DonorNature } from './nif';
 import { provinceFromPostcode, provinceFromText } from './provinces';
 import { deductionPercent, recurrence, type DonationKey, type RecurrenceVerdict, type YearTotals } from './rules';
@@ -17,6 +18,8 @@ export interface DonationRow {
   amountCents: number | null;
   amountRaw: string;
   year: number | null;
+  /** Date or year cell as text, used to spot the same payment loaded twice. */
+  dateText: string;
   postcode: string;
   provinceText: string;
   keyRaw: string;
@@ -32,8 +35,14 @@ export function composeName(full: string, last: string, first: string): string {
   return full.trim();
 }
 
-/** Turn sheet rows (without the header) into DonationRows using a column mapping. */
-export function extractRows(rows: Cell[][], mapping: ColumnMapping, source: string): DonationRow[] {
+const PERSON_NIF = /^\s*[0-9XYZKLMxyzklm]/;
+
+/**
+ * Turn sheet rows (without the header) into DonationRows using a column mapping.
+ * `givenFirst`: the full-name column is written "Nombre Apellidos"; reorder it
+ * for individuals to the "Apellidos Nombre" order AEAT requires.
+ */
+export function extractRows(rows: Cell[][], mapping: ColumnMapping, source: string, opts: { givenFirst?: boolean } = {}): DonationRow[] {
   const get = (r: Cell[], k: keyof ColumnMapping): Cell =>
     mapping[k] === undefined ? null : r[mapping[k] as number];
   const out: DonationRow[] = [];
@@ -41,14 +50,18 @@ export function extractRows(rows: Cell[][], mapping: ColumnMapping, source: stri
     if (!r || r.every((c) => c === null || c === undefined || String(c).trim() === '')) return;
     const amountCell = get(r, 'amount');
     const yearFromCol = parseYear(get(r, 'year'));
+    const full = cellText(get(r, 'fullName'));
+    const nifText = cellText(get(r, 'nif'));
+    const fullOrdered = opts.givenFirst && full && !full.includes(',') && PERSON_NIF.test(nifText) ? givenFirstToSurnameFirst(full) : full;
     out.push({
       row: i + 2,
       source,
-      nifRaw: cellText(get(r, 'nif')),
-      name: composeName(cellText(get(r, 'fullName')), cellText(get(r, 'lastName')), cellText(get(r, 'firstName'))),
+      nifRaw: nifText,
+      name: composeName(fullOrdered, cellText(get(r, 'lastName')), cellText(get(r, 'firstName'))),
       amountCents: parseAmountCents(amountCell),
       amountRaw: cellText(amountCell),
       year: yearFromCol ?? parseYear(get(r, 'date')),
+      dateText: cellText(get(r, 'date')) || cellText(get(r, 'year')),
       postcode: cellText(get(r, 'postcode')),
       provinceText: cellText(get(r, 'province')),
       keyRaw: cellText(get(r, 'key')),
@@ -363,6 +376,9 @@ export function buildDeclaration(input: BuildInput): Declaration {
     else if (totalCents <= 0) blockedBy = 'El importe neto del año es cero o negativo.';
 
     if (!blockedBy) {
+      // The micro-patronage threshold applies to the donor's deduction base (all
+      // their deductible donations to the entity in the year), not to each record.
+      const base = [...acc.buckets.values()].reduce((sum, b) => sum + Math.max(b.cents, 0), 0);
       for (const b of [...acc.buckets.values()].sort((x, y) => x.key.localeCompare(y.key) || Number(x.inKind) - Number(y.inKind))) {
         if (b.cents <= 0) {
           if (b.cents < 0) {
@@ -376,7 +392,7 @@ export function buildDeclaration(input: BuildInput): Declaration {
           name,
           province: province as string,
           key: b.key,
-          percent: deductionPercent(acc.nature, b.key, b.cents, verdict.recurrent),
+          percent: deductionPercent(acc.nature, b.key, base, verdict.recurrent),
           amountCents: b.cents,
           inKind: b.inKind,
           nature: acc.nature,

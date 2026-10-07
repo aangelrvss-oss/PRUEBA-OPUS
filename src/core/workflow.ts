@@ -1,6 +1,8 @@
 import { buildDeclaration, extractRows, type Declaration, type DonationRow, type HistoryEntry } from './engine';
 import type { LoadedFile, TableFile } from './files';
 import { detectMapping, mappingProblems, type ColumnMapping, type MappingProblem } from './mapping';
+import { guessNameOrder, type NameOrderGuess } from './names';
+import { cellText } from './values';
 import { RULESET } from './rules';
 
 /** A file the user dropped, plus the choices made about it. */
@@ -11,14 +13,26 @@ export interface Source {
   mapping: ColumnMapping;
   /** Year applied to rows that have no date/year (spreadsheets only). */
   fixedYear: number | null;
+  /** Whether a single full-name column is written "Nombre Apellidos" and must be reordered. */
+  givenFirst: boolean;
+}
+
+/** Detect "Nombre Apellidos" order in the mapped full-name column (only when there is no surname column). */
+export function nameOrderGuess(file: LoadedFile, mapping: ColumnMapping): NameOrderGuess | null {
+  if (file.kind !== 'table' || mapping.fullName === undefined || mapping.lastName !== undefined) return null;
+  const col = mapping.fullName;
+  const names = file.rows.slice(0, 300).map((r) => cellText(r[col]));
+  return guessNameOrder(names);
 }
 
 export function makeSource(id: string, file: LoadedFile): Source {
+  const mapping = file.kind === 'table' ? detectMapping(file.headers) : {};
   return {
     id,
     file,
-    mapping: file.kind === 'table' ? detectMapping(file.headers) : {},
+    mapping,
     fixedYear: null,
+    givenFirst: nameOrderGuess(file, mapping)?.givenFirst ?? false,
   };
 }
 
@@ -37,10 +51,35 @@ export interface SourceSummary {
   warnings: string[];
 }
 
+/** Sources are immutable (edits create a new object), so extraction can be cached per object. */
+const rowCache = new WeakMap<Source, DonationRow[]>();
+
 function tableRows(s: Source & { file: TableFile }): DonationRow[] {
-  const rows = extractRows(s.file.rows, s.mapping, s.file.name);
+  const cached = rowCache.get(s);
+  if (cached) return cached;
+  const rows = extractRows(s.file.rows, s.mapping, s.file.name, { givenFirst: s.givenFirst });
   if (s.fixedYear !== null) for (const r of rows) if (r.year === null) r.year = s.fixedYear;
+  rowCache.set(s, rows);
   return rows;
+}
+
+/** Payments (same NIF, date and amount) present in two different files: probably loaded twice. */
+export function duplicatesAcrossFiles(rows: DonationRow[]): { count: number; files: string[] } {
+  const seen = new Map<string, string>();
+  const files = new Set<string>();
+  let count = 0;
+  for (const r of rows) {
+    if (!r.dateText || !r.nifRaw || r.amountCents === null) continue;
+    const key = `${r.nifRaw.toUpperCase()}|${r.dateText}|${r.amountCents}`;
+    const first = seen.get(key);
+    if (first === undefined) seen.set(key, r.source);
+    else if (first !== r.source) {
+      count++;
+      files.add(first);
+      files.add(r.source);
+    }
+  }
+  return { count, files: [...files] };
 }
 
 export function summarizeSource(s: Source): SourceSummary {
@@ -107,8 +146,18 @@ export function runWorkflow(sources: Source[], year: number): WorkflowResult {
     rows.push(...tableRows(s as Source & { file: TableFile }));
   }
 
+  const declaration = buildDeclaration({ year, rows, history });
+  const dup = duplicatesAcrossFiles(rows);
+  if (dup.count > 0) {
+    declaration.issues.unshift({
+      severity: 'warning',
+      code: 'duplicate-across-files',
+      message: `${dup.count} pago(s) aparecen idénticos (mismo NIF, fecha e importe) en ${dup.files.join(' y ')}.`,
+      action: 'Si has cargado los mismos donativos dos veces, quita uno de los archivos: si no, se sumarán dos veces.',
+    });
+  }
   return {
-    declaration: buildDeclaration({ year, rows, history }),
+    declaration,
     summaries,
     blocked,
     declarantNifsInHistory: [...declarantNifs],

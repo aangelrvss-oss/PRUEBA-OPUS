@@ -20,9 +20,12 @@ let nextId = 1;
 
 export function Tool({ startWithDemo }: { startWithDemo: boolean }) {
   const [sources, setSources] = useState<Source[]>([]);
+  const sourcesRef = useRef<Source[]>([]);
+  sourcesRef.current = sources;
   const [yearOverride, setYearOverride] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [loadErrors, setLoadErrors] = useState<string[]>([]);
+  const [notice, setNotice] = useState<string | null>(null);
   const [isDemo, setIsDemo] = useState(false);
   const [entity, setEntity] = useState<EntityInfo>(() => storage.get(ENTITY_KEY, EMPTY_ENTITY));
   const [showEntityErrors, setShowEntityErrors] = useState(false);
@@ -45,10 +48,27 @@ export function Tool({ startWithDemo }: { startWithDemo: boolean }) {
         track('file_rejected', { reason: e instanceof FileReadError ? 'known' : 'unexpected' });
       }
     }
-    setSources((prev) => (opts.demo ? added : [...prev, ...added]));
+    const replaced: string[] = [];
+    let next: Source[];
+    if (opts.demo) next = added;
+    else {
+      // Re-uploading a corrected file with the same name replaces the old one
+      // instead of adding its donations a second time.
+      next = [...sourcesRef.current];
+      for (const a of added) {
+        const i = next.findIndex((p) => p.file.name === a.file.name);
+        if (i >= 0) {
+          next[i] = a;
+          replaced.push(a.file.name);
+        } else next.push(a);
+      }
+    }
+    sourcesRef.current = next;
+    setSources(next);
+    setNotice(replaced.length ? `Se ha sustituido ${replaced.join(', ')} por la versión nueva.` : null);
     setLoadErrors(errors);
     setBusy(false);
-    if (added.length) requestAnimationFrame(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    if (added.length && !opts.demo) requestAnimationFrame(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }, []);
 
   const loadDemo = useCallback(() => {
@@ -170,6 +190,9 @@ export function Tool({ startWithDemo }: { startWithDemo: boolean }) {
             </div>
           )}
           <DropZone onFiles={(f) => void addFiles(f)} compact={sources.length > 0} busy={busy} />
+          {notice && (
+            <p className="badge badge-info" role="status" style={{ whiteSpace: 'normal', justifySelf: 'start' }}>{notice}</p>
+          )}
           {loadErrors.map((e) => (
             <div key={e} className="alert alert-error" role="alert">
               <IconAlert />
