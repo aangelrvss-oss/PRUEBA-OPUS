@@ -119,7 +119,8 @@ accepts files with or without line breaks and ignores revocation records.
 
 ## Measured performance
 
-Measured in this environment with Chromium 141 on the production build.
+Measured in this environment with Chromium 141 on the production build
+(`scripts/perf-landing.mjs`, `scripts/perf-large-file.mjs`, `tests/unit/perf.test.ts`).
 
 | Measure | Result |
 |---|---|

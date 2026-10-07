@@ -4,6 +4,7 @@ import { chromium } from '@playwright/test';
 
 const base = process.argv[2] ?? 'http://127.0.0.1:4173';
 const out = process.argv[3] ?? 'qa-screenshots';
+await import('node:fs').then((fs) => fs.mkdirSync(out, { recursive: true }));
 const shots = [
   { name: 'landing', url: '#inicio', full: true },
   { name: 'tool-empty', url: '#app', full: true },
