@@ -46,8 +46,8 @@ revocations, regional (CCAA) deductions, foral territories.
 ```bash
 npm ci
 npm run dev          # http://localhost:5173
-npm test             # 80 unit tests
-npm run test:e2e     # 16 Playwright runs (8 journeys × desktop + mobile)
+npm test             # 81 unit and integration tests
+npm run test:e2e     # 28 Playwright runs: 8 journeys + 3 axe scans (light/dark), desktop and mobile
 npm run build        # dist/ (static site, any host)
 npm run build:single # dist-single/cuadra.html (one self-contained page)
 ```
