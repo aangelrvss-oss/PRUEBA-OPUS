@@ -1,0 +1,26 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+dist-single/
+*.tsbuildinfo
+
+# test output
+coverage/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# local env & editor
+.env
+.env.*
+!.env.example
+.DS_Store
+*.log
+.vscode/
+.idea/
+
+# QA scratch
+qa-screenshots/
