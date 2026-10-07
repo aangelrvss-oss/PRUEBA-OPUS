@@ -4,7 +4,7 @@ import { build182, entityProblems, type EntityInfo } from '../core/boe182';
 import type { Declaration } from '../core/engine';
 import { donorReportCsv, historyCsv } from '../core/exports';
 import { saveFile } from './download';
-import { IconCheck, IconDownload } from './icons';
+import { IconAlert, IconCheck, IconDownload } from './icons';
 
 export function EntityForm({ entity, onChange, showErrors }: { entity: EntityInfo; onChange: (e: EntityInfo) => void; showErrors: boolean }) {
   const problems = entityProblems(entity);
@@ -82,7 +82,7 @@ export function DownloadPanel({ d, entity, onNeedEntity }: { d: Declaration; ent
       <div style={{ display: 'grid', gap: 14 }}>
         {errors.length > 0 && (
           <div className="alert alert-warn">
-            <IconCheck style={{ visibility: 'hidden' }} />
+            <IconAlert />
             <span className="alert-title">{errors.length} problema(s) dejan donativos fuera del fichero</span>
             <span className="alert-body">
               Lo mejor es corregirlos en tu hoja y volver a cargarla. Si no llegas, puedes presentar ahora y añadir esos donantes

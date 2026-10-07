@@ -1,7 +1,7 @@
 import type { ColumnMapping } from './mapping';
 import { givenFirstToSurnameFirst } from './names';
 import { validateNif, type DonorNature } from './nif';
-import { provinceFromPostcode, provinceFromText } from './provinces';
+import { PROVINCES, provinceFromPostcode, provinceFromText } from './provinces';
 import { deductionPercent, recurrence, type DonationKey, type RecurrenceVerdict, type YearTotals } from './rules';
 import { cellText, parseAmountCents, parseFlag, parseYear, type Cell } from './values';
 
@@ -346,7 +346,7 @@ export function buildDeclaration(input: BuildInput): Declaration {
 
     const provinceSet = new Set(acc.provinces);
     const province = acc.provinces[acc.provinces.length - 1] ?? null;
-    if (provinceSet.size > 1) notes.push(`Aparece en varias provincias; se usa la del último donativo (${province}).`);
+    if (provinceSet.size > 1) notes.push(`Aparece en varias provincias; se usa la del último donativo (${PROVINCES[province as string] ?? province}).`);
 
     let representative = '';
     if (acc.representative) {
