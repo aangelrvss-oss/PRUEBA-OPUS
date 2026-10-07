@@ -156,6 +156,7 @@ interface DonorAcc {
   nature: DonorNature;
   nifNote?: string;
   names: Map<string, number>;
+  rowsByName: Map<string, { source: string; row: number }[]>;
   provinces: string[];
   representative: string;
   buckets: Map<string, { key: DonationKey; inKind: boolean; cents: number }>;
@@ -264,6 +265,7 @@ export function buildDeclaration(input: BuildInput): Declaration {
         nature: nif.nature,
         nifNote: nif.note,
         names: new Map(),
+        rowsByName: new Map(),
         provinces: [],
         representative: '',
         buckets: new Map(),
@@ -271,7 +273,10 @@ export function buildDeclaration(input: BuildInput): Declaration {
       };
       donors.set(nif.nif, acc);
     }
-    if (r.name) acc.names.set(r.name, (acc.names.get(r.name) ?? 0) + 1);
+    if (r.name) {
+      acc.names.set(r.name, (acc.names.get(r.name) ?? 0) + 1);
+      acc.rowsByName.set(r.name, [...(acc.rowsByName.get(r.name) ?? []), where]);
+    }
     const prov = provinceFromText(r.provinceText) ?? provinceFromPostcode(r.postcode);
     if (prov) acc.provinces.push(prov);
     if (r.representativeNifRaw) acc.representative = r.representativeNifRaw;
@@ -317,7 +322,8 @@ export function buildDeclaration(input: BuildInput): Declaration {
         action: `Se usará "${name}". Comprueba que no son dos personas distintas con un NIF equivocado.`,
         nif: acc.nif,
         name,
-        rows: acc.rows,
+        // Point at the rows with the less frequent names: those are the suspicious ones.
+        rows: names.slice(1).flatMap(([n]) => acc.rowsByName.get(n) ?? []),
       });
     }
     if (acc.nifNote) notes.push(acc.nifNote);

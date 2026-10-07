@@ -37,6 +37,35 @@ function inlineIntoHtml(): Plugin {
   };
 }
 
+/**
+ * Production Content-Security-Policy. `connect-src 'none'` means the page
+ * cannot send data anywhere: the "nothing leaves your browser" promise is
+ * enforced by the browser, not just stated. Not applied in dev (HMR needs a
+ * websocket).
+ */
+export const CSP = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  "font-src 'self' data:",
+  "img-src 'self' data: blob:",
+  "connect-src 'none'",
+  "worker-src 'self' blob:",
+  "object-src 'none'",
+  "base-uri 'none'",
+  "form-action 'none'",
+].join('; ');
+
+function injectCsp(): Plugin {
+  return {
+    name: 'cuadra-csp',
+    apply: 'build',
+    transformIndexHtml(html) {
+      return html.replace('<meta charset="UTF-8" />', `<meta charset="UTF-8" />\n    <meta http-equiv="Content-Security-Policy" content="${CSP}" />`);
+    },
+  };
+}
+
 function escape(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -45,7 +74,7 @@ export default defineConfig(({ mode }) => {
   const single = mode === 'single';
   return {
     base: './',
-    plugins: [react(), ...(single ? [inlineIntoHtml()] : [])],
+    plugins: [react(), injectCsp(), ...(single ? [inlineIntoHtml()] : [])],
     build: {
       outDir: single ? 'dist-single' : 'dist',
       target: 'es2022',
