@@ -1,10 +1,19 @@
 import type { Declaration } from './engine';
 import { PROVINCES } from './provinces';
 
+/**
+ * Text that a spreadsheet would read as a formula (=, +, @, tab/CR, or "-" not
+ * followed by a number) is prefixed with an apostrophe: donor names can come
+ * from public donation forms (CSV/formula injection, OWASP).
+ */
+export function neutralizeFormula(v: string): string {
+  return /^[=+@\t\r]/.test(v) || /^-(?![\d.,]+$)/.test(v) ? `'${v}` : v;
+}
+
 /** CSV for Spanish Excel: semicolon separator, UTF-8 with BOM, decimal comma. */
 function csv(rows: (string | number)[][]): string {
   const esc = (v: string | number) => {
-    const s = String(v);
+    const s = typeof v === 'number' ? String(v) : neutralizeFormula(v);
     return /[;"\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
   return '﻿' + rows.map((r) => r.map(esc).join(';')).join('\r\n') + '\r\n';

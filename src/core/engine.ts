@@ -409,7 +409,7 @@ export function buildDeclaration(input: BuildInput): Declaration {
         code: !province ? 'province-missing' : !name ? 'name-missing' : 'amount-nonpositive',
         message: `${name || acc.nif}: no se puede declarar. ${blockedBy}`,
         action: !province
-          ? 'Añade el código postal o la provincia del donante en tu hoja.'
+          ? 'Añade el código postal o la provincia del donante en tu hoja. Si vive fuera de España, escribe «Extranjero» en la columna de provincia.'
           : !name
             ? 'Añade el nombre del donante en tu hoja.'
             : 'Revisa si hubo devoluciones. Las revocaciones de años anteriores no las gestiona Cuadra.',

@@ -71,3 +71,27 @@ describe('duplicates across files', () => {
     expect(r.declaration.records[0]?.amountCents).toBe(2000);
   });
 });
+
+import { donorReportCsv, historyCsv, neutralizeFormula } from '../../src/core/exports';
+
+describe('CSV exports', () => {
+  it('neutralises spreadsheet formulas in text but keeps negative numbers', () => {
+    expect(neutralizeFormula('=HYPERLINK("http://x","clic")')).toBe('\'=HYPERLINK("http://x","clic")');
+    expect(neutralizeFormula('+34 600')).toBe("'+34 600");
+    expect(neutralizeFormula('@SUM(A1)')).toBe("'@SUM(A1)");
+    expect(neutralizeFormula('-cmd')).toBe("'-cmd");
+    expect(neutralizeFormula('-20,00')).toBe('-20,00');
+    expect(neutralizeFormula('García')).toBe('García');
+  });
+
+  it('writes Excel-friendly review and history files', () => {
+    const d = buildDeclaration({ year: 2025, rows: [row({ name: '=EVIL()', amountCents: 30000 })], history: [{ nif: ANA, year: 2024, amountCents: 1000, source: 'h' }] });
+    const report = donorReportCsv(d);
+    expect(report.startsWith('﻿NIF;Nombre')).toBe(true);
+    expect(report).toContain("'=EVIL()");
+    expect(report).toContain('300,00');
+    const hist = historyCsv(d);
+    expect(hist).toContain(`${ANA};'=EVIL();2024;10,00`);
+    expect(hist).toContain(`${ANA};'=EVIL();2025;300,00`);
+  });
+});

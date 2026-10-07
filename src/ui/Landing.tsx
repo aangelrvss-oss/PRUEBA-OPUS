@@ -41,7 +41,7 @@ export function Landing() {
               <span>recurrencia · ejercicio 2025</span>
               <span>ejemplo</span>
             </div>
-            <div style={{ overflowX: 'auto' }}>
+            <div style={{ overflowX: 'auto' }} tabIndex={0} role="region" aria-label="Tabla de ejemplo: donativos por año y resultado">
               <table>
                 <thead>
                   <tr><th>Donante</th><th>2023</th><th>2024</th><th>2025</th><th className="verdict">Resultado</th></tr>

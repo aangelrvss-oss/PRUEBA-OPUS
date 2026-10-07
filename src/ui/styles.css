@@ -23,7 +23,7 @@
   --surface: #fffdf8;
   --ink: #1b2230;
   --ink-2: #4b5466;
-  --ink-3: #6b7383;
+  --ink-3: #5c6372;
   --line: #e2dccd;
   --line-strong: #cbc3af;
   --rule: rgba(47, 90, 138, 0.07);
@@ -327,7 +327,7 @@ small, .small { font-size: 0.875rem; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { min-height: 34px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-2); font: 500 .85rem var(--font-sans); cursor: pointer; }
 .chip[aria-pressed='true'] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
-.chip .count { font-family: var(--font-mono); opacity: .75; margin-left: 4px; }
+.chip .count { font-family: var(--font-mono); margin-left: 4px; }
 
 .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r-2); background: var(--surface); }
 .dtable { width: 100%; border-collapse: collapse; font-size: .92rem; }
