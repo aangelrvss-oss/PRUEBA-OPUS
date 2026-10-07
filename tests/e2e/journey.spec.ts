@@ -67,7 +67,7 @@ test('landing explains the product and the demo produces a valid 182 file', asyn
 
 test('own Excel CSV (Windows-1252, title rows) → review → entity required → download', async ({ page }) => {
   const external = watchNetwork(page);
-  await page.goto('/#/app');
+  await page.goto('/#app');
   await expect(page.getByText('Aquí verás los donantes')).toBeVisible();
   await page.getByTestId('file-input').setInputFiles(path.join(fixtures, 'donativos_2026_excel.csv'));
 
@@ -107,7 +107,7 @@ test('previous 182 files are used as history for recurrence', async ({ page }) =
   const f2024 = build182(buildDeclaration({ year: 2024, rows: [row(2024, 30000)], history: [] }), entity);
   const f2025 = build182(buildDeclaration({ year: 2025, rows: [row(2025, 40000)], history: [] }), entity);
 
-  await page.goto('/#/app');
+  await page.goto('/#app');
   await page.getByTestId('file-input').setInputFiles([
     { name: 'donativos_2026_excel.csv', mimeType: 'text/csv', buffer: readFileSync(path.join(fixtures, 'donativos_2026_excel.csv')) },
     { name: f2024.fileName, mimeType: 'text/plain', buffer: Buffer.from(f2024.bytes) },
@@ -123,7 +123,7 @@ test('previous 182 files are used as history for recurrence', async ({ page }) =
 });
 
 test('missing columns can be mapped by hand', async ({ page }) => {
-  await page.goto('/#/app');
+  await page.goto('/#app');
   await page.getByTestId('file-input').setInputFiles(path.join(fixtures, 'sin_columnas_claras.csv'));
   await expect(page.getByText('Falta la columna del nombre')).toBeVisible();
   await expect(page.getByText('Falta indicar algunas columnas')).toBeVisible();
@@ -132,13 +132,13 @@ test('missing columns can be mapped by hand', async ({ page }) => {
 });
 
 test('unsupported files are rejected with a clear message', async ({ page }) => {
-  await page.goto('/#/app');
+  await page.goto('/#app');
   await page.getByTestId('file-input').setInputFiles(path.join(fixtures, 'notas.pdf'));
   await expect(page.getByRole('alert')).toContainText('Formato no soportado: .pdf');
 });
 
 test('re-uploading a corrected file replaces it instead of double counting', async ({ page }) => {
-  await page.goto('/#/app');
+  await page.goto('/#app');
   const file = path.join(fixtures, 'donativos_2026_excel.csv');
   await page.getByTestId('file-input').setInputFiles(file);
   const total = page.getByTestId('stats').locator('.stat').nth(1);
@@ -150,7 +150,7 @@ test('re-uploading a corrected file replaces it instead of double counting', asy
 });
 
 test('"Nombre Apellidos" columns are detected and reordered for AEAT', async ({ page }) => {
-  await page.goto('/#/app');
+  await page.goto('/#app');
   const csv = 'NIF;Nombre completo;Importe;CP\n12345678Z;José Luis Núñez Peña;30;28013\nX0000000T;Marta Gil Sanz;20;08012\nY0000000Z;Pedro Ruiz Mora;15;46002\n';
   await page.getByTestId('file-input').setInputFiles({ name: 'socios.csv', mimeType: 'text/csv', buffer: Buffer.from(csv) });
   const toggle = page.getByLabel(/reordenarlos a «Apellidos Nombre»/);
@@ -158,4 +158,15 @@ test('"Nombre Apellidos" columns are detected and reordered for AEAT', async ({ 
   await expect(page.getByTestId('donor-table')).toContainText('Núñez Peña José Luis');
   await toggle.uncheck();
   await expect(page.getByTestId('donor-table')).toContainText('José Luis Núñez Peña');
+});
+
+test('Excel .xlsx files are read (dates, numbers, province names)', async ({ page }) => {
+  await page.goto('/#app');
+  await page.getByTestId('file-input').setInputFiles(path.join(fixtures, 'donativos_2026.xlsx'));
+  await expect(page.getByTestId('filecard')).toContainText('2026: 2 filas');
+  const table = page.getByTestId('donor-table');
+  await expect(table).toContainText('Núñez Peña José');
+  await expect(table).toContainText('Girona');
+  await expect(table).toContainText('Valencia');
+  await expect(page.getByTestId('stats')).toContainText('420,50 €');
 });

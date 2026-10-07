@@ -22,10 +22,10 @@ export function Landing() {
               AEAT.
             </p>
             <div className="hero-ctas">
-              <a className="btn btn-primary btn-lg" href="#/app?demo">
+              <a className="btn btn-primary btn-lg" href="#demo">
                 Probar con datos de ejemplo <IconArrowRight />
               </a>
-              <a className="btn btn-secondary btn-lg" href="#/app">
+              <a className="btn btn-secondary btn-lg" href="#app">
                 Usar mi archivo
               </a>
             </div>
@@ -213,7 +213,7 @@ export function Landing() {
                 <li>Recurrencia y porcentajes explicados</li>
                 <li>Informe de revisión e historial en CSV</li>
               </ul>
-              <a className="btn btn-primary" href="#/app">Abrir la herramienta</a>
+              <a className="btn btn-primary" href="#app">Abrir la herramienta</a>
             </div>
             <div className="plan">
               <span className="badge badge-no" style={{ justifySelf: 'start' }}>En validación</span>
@@ -292,7 +292,7 @@ export function Landing() {
       <section className="section">
         <div className="container" style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center', justifyContent: 'space-between' }}>
           <h2 style={{ maxWidth: '22ch' }}>Pruébalo ahora con datos de ejemplo. Tarda menos de un minuto.</h2>
-          <a className="btn btn-primary btn-lg" href="#/app?demo">
+          <a className="btn btn-primary btn-lg" href="#demo">
             Ver el ejemplo <IconArrowRight />
           </a>
         </div>

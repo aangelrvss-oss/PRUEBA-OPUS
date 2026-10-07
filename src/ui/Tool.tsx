@@ -116,7 +116,7 @@ export function Tool({ startWithDemo }: { startWithDemo: boolean }) {
     setIsDemo(false);
     setYearOverride(null);
     setEntity(storage.get(ENTITY_KEY, EMPTY_ENTITY));
-    window.location.hash = '#/app';
+    window.location.hash = '#app';
   };
 
   const years: number[] = [];
@@ -165,7 +165,7 @@ export function Tool({ startWithDemo }: { startWithDemo: boolean }) {
           <h2 id="files-h" style={{ fontSize: '1.2rem' }}>1 · Archivos</h2>
           {sources.length === 0 && (
             <span style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => saveFile(TEMPLATE_CSV, 'plantilla_donativos.csv', 'text/csv;charset=utf-8')}>Descargar plantilla</button>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => void saveFile(TEMPLATE_CSV, 'plantilla_donativos.csv', 'text/csv;charset=utf-8')}>Descargar plantilla</button>
               <button type="button" className="btn btn-secondary btn-sm" onClick={loadDemo} data-testid="load-demo">Cargar datos de ejemplo</button>
             </span>
           )}

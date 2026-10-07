@@ -7,7 +7,9 @@ import { Tool } from './Tool';
 type Route = { page: 'landing' } | { page: 'app'; demo: boolean };
 
 function parseRoute(hash: string): Route {
-  if (hash.startsWith('#/app')) return { page: 'app', demo: hash.includes('demo') };
+  // Bare tokens: the artifact host only forwards plain #anchors. "#/app" kept for old links.
+  if (hash === '#demo' || hash.startsWith('#/app?demo')) return { page: 'app', demo: true };
+  if (hash === '#app' || hash.startsWith('#/app')) return { page: 'app', demo: false };
   return { page: 'landing' };
 }
 
@@ -36,7 +38,7 @@ export function App() {
     <>
       <header className="topbar">
         <div className="container">
-          <a className="brand" href="#/" aria-label="Cuadra, inicio">
+          <a className="brand" href="#inicio" aria-label="Cuadra, inicio">
             <BrandMark className="brand-mark" />
             Cuadra <span className="brand-tag">182</span>
           </a>
@@ -46,10 +48,10 @@ export function App() {
                 <a className="navlink" href="#como-funciona" onClick={scrollTo('como-funciona')}>Cómo funciona</a>
                 <a className="navlink" href="#precios" onClick={scrollTo('precios')}>Precios</a>
                 <a className="navlink" href="#preguntas" onClick={scrollTo('preguntas')}>Preguntas</a>
-                <a className="btn btn-primary btn-sm" href="#/app">Abrir la herramienta</a>
+                <a className="btn btn-primary btn-sm" href="#app">Abrir la herramienta</a>
               </>
             ) : (
-              <a className="navlink" href="#/" style={{ display: 'inline' }}>Qué es Cuadra</a>
+              <a className="navlink" href="#inicio" style={{ display: 'inline' }}>Qué es Cuadra</a>
             )}
           </nav>
         </div>

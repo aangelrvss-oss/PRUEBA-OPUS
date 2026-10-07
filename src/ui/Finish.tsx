@@ -61,7 +61,7 @@ export function DownloadPanel({ d, entity, onNeedEntity }: { d: Declaration; ent
   const errors = d.issues.filter((i) => i.severity === 'error');
   const noRecords = d.records.length === 0;
 
-  const download182 = () => {
+  const download182 = async () => {
     setError(null);
     if (problems.length) {
       onNeedEntity();
@@ -69,9 +69,12 @@ export function DownloadPanel({ d, entity, onNeedEntity }: { d: Declaration; ent
     }
     try {
       const built = build182(d, entity);
-      saveFile(built.bytes, built.fileName, 'text/plain;charset=iso-8859-1');
-      setDone(built.fileName);
-      track('file_downloaded', { records: d.records.length > 0 ? 'some' : 'none', errorsLeft: errors.length > 0 });
+      const outcome = await saveFile(built.bytes, built.fileName, 'text/plain;charset=iso-8859-1');
+      if (outcome === 'saved') {
+        setDone(built.fileName);
+        track('file_downloaded', { records: d.records.length > 0 ? 'some' : 'none', errorsLeft: errors.length > 0 });
+      } else if (outcome === 'failed') setError('No se pudo guardar el fichero. Inténtalo de nuevo en unos segundos.');
+      else if (outcome === 'unavailable') setError('Esta vista no permite guardar archivos. Abre Cuadra en una pestaña propia del navegador y vuelve a descargar.');
     } catch (e) {
       setError(`No se pudo generar el fichero: ${(e as Error).message}`);
     }
@@ -94,14 +97,14 @@ export function DownloadPanel({ d, entity, onNeedEntity }: { d: Declaration; ent
           <p className="small muted">Para descargar el fichero, completa los datos de la entidad.</p>
         )}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-          <button type="button" className="btn btn-primary btn-lg" onClick={download182} disabled={noRecords} data-testid="download-182">
+          <button type="button" className="btn btn-primary btn-lg" onClick={() => void download182()} disabled={noRecords} data-testid="download-182">
             <IconDownload /> Descargar fichero 182
           </button>
           <button
             type="button"
             className="btn btn-secondary"
             onClick={() => {
-              saveFile(donorReportCsv(d), `revision_182_${d.year}.csv`, 'text/csv;charset=utf-8');
+              void saveFile(donorReportCsv(d), `revision_182_${d.year}.csv`, 'text/csv;charset=utf-8');
               track('report_downloaded');
             }}
           >
@@ -111,7 +114,7 @@ export function DownloadPanel({ d, entity, onNeedEntity }: { d: Declaration; ent
             type="button"
             className="btn btn-secondary"
             onClick={() => {
-              saveFile(historyCsv(d), `historial_donativos_${d.year - 1}_${d.year}.csv`, 'text/csv;charset=utf-8');
+              void saveFile(historyCsv(d), `historial_donativos_${d.year - 1}_${d.year}.csv`, 'text/csv;charset=utf-8');
               track('history_downloaded');
             }}
           >

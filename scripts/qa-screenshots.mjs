@@ -5,9 +5,9 @@ import { chromium } from '@playwright/test';
 const base = process.argv[2] ?? 'http://127.0.0.1:4173';
 const out = process.argv[3] ?? 'qa-screenshots';
 const shots = [
-  { name: 'landing', url: '#/', full: true },
-  { name: 'tool-empty', url: '#/app', full: true },
-  { name: 'tool-demo', url: '#/app?demo', full: true, wait: '[data-testid="donor-table"]' },
+  { name: 'landing', url: '#inicio', full: true },
+  { name: 'tool-empty', url: '#app', full: true },
+  { name: 'tool-demo', url: '#demo', full: true, wait: '[data-testid="donor-table"]' },
 ];
 const viewports = [
   { tag: 'desktop', width: 1280, height: 900 },
